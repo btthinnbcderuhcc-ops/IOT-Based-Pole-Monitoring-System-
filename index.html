@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Power Quality Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; background:#0f172a; color:white; text-align:center }
+    .card { background:#1e293b; padding:20px; margin:10px; border-radius:10px }
+  </style>
+</head>
+<body>
+
+<h2>⚡ Power Quality Monitoring</h2>
+
+<div class="card" id="data"></div>
+<canvas id="powerChart"></canvas>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFTCrxgzaKrKbqIt7OLBCaqKMpfNmCOMw",
+  authDomain: "iot-pole-monitoring.firebaseapp.com",
+  databaseURL: "https://iot-pole-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "iot-pole-monitoring",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const ctx = document.getElementById('powerChart').getContext('2d');
+let chart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets: [{ label:'Power (W)', data:[] }] }
+});
+
+onValue(ref(db, 'powerData'), snap => {
+  const d = snap.val();
+  document.getElementById("data").innerHTML =
+    `Voltage: ${d.voltage} V<br>
+     Current: ${d.current} A<br>
+     Power: ${d.power} W<br>
+     Energy: ${d.energy} kWh<br>
+     Frequency: ${d.frequency} Hz<br>
+     PF: ${d.pf}`;
+
+  chart.data.labels.push(d.timestamp);
+  chart.data.datasets[0].data.push(d.power);
+  chart.update();
+});
+</script>
+
+</body>
+</html>
