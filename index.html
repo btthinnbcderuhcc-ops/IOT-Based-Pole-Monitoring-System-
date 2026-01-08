@@ -1,19 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Power Quality Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { font-family: Arial; background:#0f172a; color:white; text-align:center }
-    .card { background:#1e293b; padding:20px; margin:10px; border-radius:10px }
-  </style>
+<meta charset="UTF-8">
+<title>Power Quality Monitoring Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+    margin: 0;
+    padding: 20px;
+  }
+  h2 { text-align: center; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+    gap: 15px;
+  }
+  .card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,.4);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border-bottom: 1px solid #334155;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+  }
+  th { background: #020617; }
+  .fault { color: #f87171; font-weight: bold; }
+</style>
 </head>
+
 <body>
 
-<h2>⚡ Power Quality Monitoring</h2>
+<h2>⚡ Power Quality Monitoring Dashboard</h2>
 
-<div class="card" id="data"></div>
-<canvas id="powerChart"></canvas>
+<!-- LIVE DATA -->
+<div class="grid">
+  <div class="card" id="liveData">Loading...</div>
+</div>
+
+<br>
+
+<!-- POWER CHART -->
+<div class="card">
+  <canvas id="powerChart"></canvas>
+</div>
+
+<br>
+
+<!-- FAULT TABLE -->
+<div class="card">
+  <h3>🚨 Fault History</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Reason</th>
+        <th>Voltage (V)</th>
+        <th>Current (A)</th>
+      </tr>
+    </thead>
+    <tbody id="faultTable"></tbody>
+  </table>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
@@ -23,31 +83,66 @@ const firebaseConfig = {
   apiKey: "AIzaSyDFTCrxgzaKrKbqIt7OLBCaqKMpfNmCOMw",
   authDomain: "iot-pole-monitoring.firebaseapp.com",
   databaseURL: "https://iot-pole-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "iot-pole-monitoring",
+  projectId: "iot-pole-monitoring"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const ctx = document.getElementById('powerChart').getContext('2d');
-let chart = new Chart(ctx, {
+// ---------- LIVE DATA ----------
+onValue(ref(db, 'powerData'), snap => {
+  const d = snap.val();
+  document.getElementById("liveData").innerHTML = `
+    <b>Voltage:</b> ${d.voltage} V<br>
+    <b>Current:</b> ${d.current} A<br>
+    <b>Power:</b> ${d.power} W<br>
+    <b>Energy:</b> ${d.energy} kWh<br>
+    <b>Frequency:</b> ${d.frequency} Hz<br>
+    <b>Power Factor:</b> ${d.pf}<br>
+    <b>Last Update:</b> ${d.timestamp}
+  `;
+});
+
+// ---------- POWER CHART ----------
+const ctx = document.getElementById('powerChart');
+let powerChart = new Chart(ctx, {
   type: 'line',
-  data: { labels: [], datasets: [{ label:'Power (W)', data:[] }] }
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'Power (W)',
+      data: [],
+      borderWidth: 2
+    }]
+  }
 });
 
 onValue(ref(db, 'powerData'), snap => {
   const d = snap.val();
-  document.getElementById("data").innerHTML =
-    `Voltage: ${d.voltage} V<br>
-     Current: ${d.current} A<br>
-     Power: ${d.power} W<br>
-     Energy: ${d.energy} kWh<br>
-     Frequency: ${d.frequency} Hz<br>
-     PF: ${d.pf}`;
+  powerChart.data.labels.push(d.timestamp);
+  powerChart.data.datasets[0].data.push(d.power);
 
-  chart.data.labels.push(d.timestamp);
-  chart.data.datasets[0].data.push(d.power);
-  chart.update();
+  if (powerChart.data.labels.length > 15) {
+    powerChart.data.labels.shift();
+    powerChart.data.datasets[0].data.shift();
+  }
+  powerChart.update();
+});
+
+// ---------- FAULT TABLE ----------
+onValue(ref(db, 'faultLog'), snap => {
+  let html = "";
+  snap.forEach(child => {
+    const f = child.val();
+    html = `
+      <tr>
+        <td>${f.time}</td>
+        <td class="fault">${f.reason}</td>
+        <td>${f.voltage}</td>
+        <td>${f.current}</td>
+      </tr>` + html;
+  });
+  document.getElementById("faultTable").innerHTML = html;
 });
 </script>
 
