@@ -3,69 +3,493 @@
 <head>
 <meta charset="UTF-8">
 <title>Power Quality Dashboard</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --dark-bg: #0f172a;
+  --card-bg: #1e293b;
+  --card-hover: #2d3748;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --border: #334155;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --radius: 16px;
+  --transition: all 0.3s ease;
+}
+
 body {
-  background:#0f172a;
-  color:#e5e7eb;
-  font-family:Arial;
-  padding:20px;
+  background: linear-gradient(135deg, var(--dark-bg) 0%, #1e1b4b 100%);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+  line-height: 1.6;
 }
-h2,h3 { text-align:center; }
-.card {
-  background:#1e293b;
-  padding:15px;
-  border-radius:12px;
-  margin-bottom:15px;
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
 }
-.grid {
-  display:grid;
-  grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
-  gap:15px;
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border);
 }
+
+.header h1 {
+  font-size: 2.5rem;
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.header p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+/* Live Stats */
+.live-stats {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.live-stats:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.4);
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.stats-header h2 {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.pulse {
+  width: 12px;
+  height: 12px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.voltage { color: #60a5fa; }
+.current { color: #34d399; }
+.pf { color: #fbbf24; }
+.frequency { color: #a78bfa; }
+
+/* Charts Section */
+.charts-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.chart-container {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 25px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.chart-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+/* Fault Table */
+.fault-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 25px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.fault-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.fault-badge {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
 table {
-  width:100%;
-  border-collapse:collapse;
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
 }
-th,td {
-  border-bottom:1px solid #334155;
-  padding:8px;
-  text-align:center;
+
+thead {
+  background: rgba(255, 255, 255, 0.05);
 }
-.fault { color:#f87171; font-weight:bold; }
+
+th {
+  padding: 18px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border);
+}
+
+td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fault-reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.fault-voltage { color: var(--danger); }
+.fault-current { color: var(--warning); }
+.fault-pf { color: #8b5cf6; }
+
+/* Footer */
+.footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.8rem;
+  }
+}
 </style>
 </head>
 
 <body>
+<div class="container">
 
-<h2>⚡ Power Quality Monitoring Dashboard</h2>
+  <!-- Header -->
+  <header class="header">
+    <h1><i class="fas fa-bolt"></i> Power Quality Monitoring Dashboard</h1>
+    <p>Real-time monitoring and analysis of electrical parameters</p>
+  </header>
 
-<!-- LIVE DATA -->
-<div class="card" id="liveData">Loading...</div>
+  <!-- Live Stats -->
+  <section class="live-stats">
+    <div class="stats-header">
+      <h2><i class="fas fa-chart-line"></i> Live Parameters</h2>
+      <div class="status-indicator">
+        <div class="pulse"></div>
+        <span>LIVE</span>
+      </div>
+    </div>
+    
+    <div class="stats-grid" id="liveData">
+      <!-- Will be populated by JavaScript -->
+      <div class="stat-card">
+        <i class="fas fa-bolt fa-2x voltage"></i>
+        <div class="stat-value voltage">0.0 V</div>
+        <div class="stat-label">Voltage</div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-tachometer-alt fa-2x current"></i>
+        <div class="stat-value current">0.0 A</div>
+        <div class="stat-label">Current</div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-sliders-h fa-2x pf"></i>
+        <div class="stat-value pf">0.00</div>
+        <div class="stat-label">Power Factor</div>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-wave-square fa-2x frequency"></i>
+        <div class="stat-value frequency">0.0 Hz</div>
+        <div class="stat-label">Frequency</div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 20px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+      <i class="far fa-clock"></i> Last Updated: <span id="lastUpdate">--:--:--</span>
+    </div>
+  </section>
 
-<!-- CHARTS -->
-<div class="grid">
-  <div class="card"><canvas id="voltageChart"></canvas></div>
-  <div class="card"><canvas id="currentChart"></canvas></div>
-  <div class="card"><canvas id="pfChart"></canvas></div>
-</div>
+  <!-- Charts -->
+  <section class="charts-section">
+    <h2 class="section-title"><i class="fas fa-chart-area"></i> Historical Trends</h2>
+    
+    <div class="charts-grid">
+      <div class="chart-container">
+        <div class="chart-header">
+          <div class="chart-title">Voltage Trend</div>
+          <div class="chart-legend">
+            <div class="legend-color" style="background: #60a5fa;"></div>
+            <span>Voltage (V)</span>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="voltageChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart-header">
+          <div class="chart-title">Current Trend</div>
+          <div class="chart-legend">
+            <div class="legend-color" style="background: #34d399;"></div>
+            <span>Current (A)</span>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="currentChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart-header">
+          <div class="chart-title">Power Factor Trend</div>
+          <div class="chart-legend">
+            <div class="legend-color" style="background: #fbbf24;"></div>
+            <span>Power Factor</span>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="pfChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<!-- FAULT TABLE -->
-<div class="card">
-<h3>🚨 Fault History</h3>
-<table>
-<thead>
-<tr>
-<th>Time</th>
-<th>Reason</th>
-<th>Voltage</th>
-<th>Current</th>
-</tr>
-</thead>
-<tbody id="faultTable"></tbody>
-</table>
+  <!-- Fault History -->
+  <section class="fault-section">
+    <div class="fault-header">
+      <h2 class="section-title"><i class="fas fa-exclamation-triangle"></i> Fault History</h2>
+      <div class="fault-badge">
+        <i class="fas fa-history"></i>
+        <span id="faultCount">0</span> Faults Detected
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Fault Type</th>
+            <th>Voltage</th>
+            <th>Current</th>
+            <th>Severity</th>
+          </tr>
+        </thead>
+        <tbody id="faultTable">
+          <!-- Will be populated by JavaScript -->
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <i class="fas fa-check-circle fa-2x" style="color: var(--success); margin-bottom: 15px;"></i>
+              <div>No faults detected</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2024 Power Quality Monitoring System | Real-time IoT Dashboard</p>
+    <p style="margin-top: 5px; font-size: 0.8rem;">Data updates every 5 seconds</p>
+  </footer>
+
 </div>
 
 <script type="module">
@@ -83,59 +507,164 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // ----- CHART INIT -----
-function createChart(id, label) {
-  return new Chart(document.getElementById(id), {
-    type:'line',
-    data:{ labels:[], datasets:[{ label:label, data:[], borderWidth:2 }] }
+function createChart(id, color, label) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: label,
+        data: [],
+        borderColor: color,
+        backgroundColor: color + '20',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(30, 41, 59, 0.9)',
+          titleColor: '#f8fafc',
+          bodyColor: '#cbd5e1',
+          borderColor: '#334155',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#94a3b8' }
+        },
+        y: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#94a3b8' },
+          beginAtZero: false
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'nearest'
+      }
+    }
   });
 }
 
-const vChart = createChart("voltageChart","Voltage (V)");
-const iChart = createChart("currentChart","Current (A)");
-const pfChart = createChart("pfChart","Power Factor");
+const vChart = createChart("voltageChart", "#60a5fa", "Voltage (V)");
+const iChart = createChart("currentChart", "#34d399", "Current (A)");
+const pfChart = createChart("pfChart", "#fbbf24", "Power Factor");
 
 // ----- LIVE DATA -----
-onValue(ref(db,'powerData'), snap => {
+onValue(ref(db, 'powerData'), snap => {
   const d = snap.val();
-
-  document.getElementById("liveData").innerHTML = `
-  <b>Voltage:</b> ${d.voltage} V |
-  <b>Current:</b> ${d.current} A |
-  <b>PF:</b> ${d.pf} |
-  <b>Updated:</b> ${d.timestamp}
-  `;
-
-  updateChart(vChart, d.timestamp, d.voltage);
-  updateChart(iChart, d.timestamp, d.current);
-  updateChart(pfChart, d.timestamp, d.pf);
+  const now = new Date();
+  const timeString = now.toLocaleTimeString();
+  
+  // Update live stats
+  document.querySelectorAll('.stat-value')[0].textContent = `${d.voltage || 0} V`;
+  document.querySelectorAll('.stat-value')[1].textContent = `${d.current || 0} A`;
+  document.querySelectorAll('.stat-value')[2].textContent = d.pf || "0.00";
+  document.querySelectorAll('.stat-value')[3].textContent = d.frequency || "50.0 Hz";
+  
+  document.getElementById('lastUpdate').textContent = timeString;
+  
+  // Update charts
+  updateChart(vChart, timeString, d.voltage);
+  updateChart(iChart, timeString, d.current);
+  updateChart(pfChart, timeString, d.pf);
 });
 
 function updateChart(chart, label, value) {
+  if (!value) return;
+  
   chart.data.labels.push(label);
   chart.data.datasets[0].data.push(value);
-  if (chart.data.labels.length > 15) {
+  
+  // Keep only last 20 data points
+  if (chart.data.labels.length > 20) {
     chart.data.labels.shift();
     chart.data.datasets[0].data.shift();
   }
-  chart.update();
+  
+  chart.update('none'); // 'none' prevents animation for smoother updates
 }
 
 // ----- FAULT TABLE -----
-onValue(ref(db,'faultLog'), snap => {
-  let html = "";
+onValue(ref(db, 'faultLog'), snap => {
+  const faults = [];
   snap.forEach(c => {
-    const f = c.val();
+    faults.push(c.val());
+  });
+  
+  const faultCount = faults.length;
+  document.getElementById('faultCount').textContent = faultCount;
+  
+  let html = "";
+  
+  if (faultCount === 0) {
     html = `
     <tr>
-      <td>${f.time}</td>
-      <td class="fault">${f.reason}</td>
-      <td>${f.voltage}</td>
-      <td>${f.current}</td>
-    </tr>` + html;
-  });
+      <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+        <i class="fas fa-check-circle fa-2x" style="color: var(--success); margin-bottom: 15px;"></i>
+        <div>No faults detected</div>
+      </td>
+    </tr>`;
+  } else {
+    faults.slice(-10).reverse().forEach(f => {
+      let severityClass = "fault-voltage";
+      let severityText = "High";
+      let icon = "fas fa-bolt";
+      
+      if (f.reason?.includes("Current")) {
+        severityClass = "fault-current";
+        severityText = "Medium";
+        icon = "fas fa-tachometer-alt";
+      } else if (f.reason?.includes("Power")) {
+        severityClass = "fault-pf";
+        severityText = "Low";
+        icon = "fas fa-sliders-h";
+      }
+      
+      html += `
+      <tr>
+        <td>${f.time || "--:--:--"}</td>
+        <td>
+          <div class="fault-reason" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">
+            <i class="${icon}"></i>
+            ${f.reason || "Unknown Fault"}
+          </div>
+        </td>
+        <td class="fault-voltage">${f.voltage || "0"} V</td>
+        <td class="fault-current">${f.current || "0"} A</td>
+        <td>
+          <div class="fault-reason ${severityClass}">
+            ${severityText}
+          </div>
+        </td>
+      </tr>`;
+    });
+  }
+  
   document.getElementById("faultTable").innerHTML = html;
 });
-</script>
 
+// Auto-refresh status indicator
+setInterval(() => {
+  const pulse = document.querySelector('.pulse');
+  pulse.style.animation = 'none';
+  setTimeout(() => {
+    pulse.style.animation = 'pulse 2s infinite';
+  }, 10);
+}, 10000);
+</script>
 </body>
 </html>
